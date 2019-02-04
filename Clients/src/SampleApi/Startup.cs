@@ -29,7 +29,7 @@ namespace SampleApi
             services.AddAuthentication("token")
                 .AddIdentityServerAuthentication("token", options =>
                 {
-                    options.Authority = Constants.Authority;
+                    options.Authority = "https://local.identityserver.io";// Constants.Authority;
                     options.RequireHttpsMetadata = false;
 
                     options.ApiName = "api1";
