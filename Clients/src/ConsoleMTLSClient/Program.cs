@@ -25,13 +25,12 @@ namespace ConsoleMTLSClient
         static async Task<TokenResponse> RequestTokenAsync()
         {
             var handler = new HttpClientHandler();
-            //handler.ClientCertificateOptions = ClientCertificateOption.Automatic;
             var cert = X509.CurrentUser.My.Thumbprint.Find("bca0d040847f843c5ee0fa6eb494837470155868").Single();
             handler.ClientCertificates.Add(cert);
 
             var client = new HttpClient(handler);
 
-            var disco = await client.GetDiscoveryDocumentAsync("https://local.identityserver.io");
+            var disco = await client.GetDiscoveryDocumentAsync(Constants.Authority);
             if (disco.IsError) throw new Exception(disco.Error);
 
             var response = await client.RequestClientCredentialsTokenAsync(new ClientCredentialsTokenRequest
@@ -49,7 +48,11 @@ namespace ConsoleMTLSClient
         {
             var baseAddress = Constants.SampleApi;
 
-            var client = new HttpClient
+            var handler = new HttpClientHandler();
+            var cert = X509.CurrentUser.My.Thumbprint.Find("bca0d040847f843c5ee0fa6eb494837470155868").Single();
+            handler.ClientCertificates.Add(cert);
+
+            var client = new HttpClient(handler)
             {
                 BaseAddress = new Uri(baseAddress)
             };

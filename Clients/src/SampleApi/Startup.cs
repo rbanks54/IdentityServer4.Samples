@@ -4,6 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using idunno.Authentication.Certificate;
+using IdentityModel;
+using System;
+using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Authentication;
 
 namespace SampleApi
 {
@@ -29,7 +34,7 @@ namespace SampleApi
             services.AddAuthentication("token")
                 .AddIdentityServerAuthentication("token", options =>
                 {
-                    options.Authority = "https://local.identityserver.io";// Constants.Authority;
+                    options.Authority = Constants.Authority;
                     options.RequireHttpsMetadata = false;
 
                     options.ApiName = "api1";
@@ -61,6 +66,21 @@ namespace SampleApi
                             return Task.CompletedTask;
                         }
                     };
+                })
+                .AddCertificate("x509", options =>
+                {
+                    options.RevocationMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck;
+
+                    options.Events = new CertificateAuthenticationEvents
+                    {
+                        OnValidateCertificate = context =>
+                        {
+                            context.Principal = Principal.CreateFromCertificate(context.ClientCertificate, includeAllClaims: true);
+                            context.Success();
+
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
         }
 
@@ -69,7 +89,7 @@ namespace SampleApi
             app.UseCors(policy =>
             {
                 policy.WithOrigins(
-                    "http://localhost:28895", 
+                    "http://localhost:28895",
                     "http://localhost:7017");
 
                 policy.AllowAnyHeader();
@@ -78,6 +98,45 @@ namespace SampleApi
             });
 
             app.UseAuthentication();
+
+            app.Use(async (ctx, next) =>
+            {
+                if (ctx.User.Identity.IsAuthenticated)
+                {
+                    var cnfJson = ctx.User.FindFirst("cnf")?.Value;
+                    if (!String.IsNullOrWhiteSpace(cnfJson))
+                    {
+                        var certResult = await ctx.AuthenticateAsync("x509");
+                        if (!certResult.Succeeded)
+                        {
+                            await ctx.ChallengeAsync("x509");
+                            return;
+                        }
+
+                        var cert = ctx.Connection.ClientCertificate;
+                        if (cert == null)
+                        {
+                            await ctx.ChallengeAsync("x509");
+                            return;
+                        }
+
+                        var thumbprint = cert.Thumbprint;
+
+                        var cnf = JObject.Parse(cnfJson);
+                        var sha256 = cnf.Value<string>("x5t#S256");
+
+                        if (String.IsNullOrWhiteSpace(sha256) ||
+                            !thumbprint.Equals(sha256, StringComparison.OrdinalIgnoreCase))
+                        {
+                            await ctx.ChallengeAsync("token");
+                            return;
+                        }
+                    }
+                }
+
+                await next();
+            });
+
             app.UseMvc();
         }
     }
