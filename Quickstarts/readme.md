@@ -25,14 +25,20 @@ This quickstart adds support for Google authentication.
 
 This quickstart adds support for Google authentication.
 
-## Quickstart #6: IdentityServer and ASP.NET Identity
-
-This quickstart uses ASP.NET Identity for identity management.
-
-## Quickstart #7: JavaScript clients
+## Quickstart #6: JavaScript clients
 
 This quickstart shows how to build a JavaScript client for IdentityServer.
 
-## Quickstart #8: EntityFramework configuration
+## Quickstart #7: EntityFramework configuration
 
 This quickstart shows how to use EntityFramework for the configuration data.
+
+## Quickstart #8: IdentityServer and ASP.NET Identity
+
+This quickstart uses ASP.NET Identity for identity management.
+
+## Quickstart #9 IdentityServer with ASP.NET Identity and EF Core
+
+This quickstart shows how you could put both quickstart #8 and #9 together into a single IdentityServer host.
+
+
