@@ -3,7 +3,9 @@
 
 
 using System;
+using System.Security.Claims;
 using IdentityServer4;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,6 +48,12 @@ namespace IdentityServer
 
                     options.ClientId = "<insert here>";
                     options.ClientSecret = "<insert here>";
+                    options.UserInformationEndpoint = "https://www.googleapis.com/oauth2/v2/userinfo";
+                    options.ClaimActions.Clear();
+                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+                    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+                    options.ClaimActions.MapJsonKey("urn:google:profile", "link");
                 })
                 .AddOpenIdConnect("oidc", "OpenID Connect", options =>
                 {
